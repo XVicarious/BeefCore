@@ -2,18 +2,11 @@ package erogenousbeef.test.client;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.RenderBlocks;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.IBlockAccess;
-import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
-import erogenousbeef.core.multiblock.IMultiblockPart;
-import erogenousbeef.test.TestMod;
-import erogenousbeef.test.common.BlockMultiblockTester;
+import org.rebel.machina.multiblock.helper.IMultiblockPart;
 import erogenousbeef.test.common.TileEntityMultiblockTester;
 import erogenousbeef.test.common.TestMultiblockController;
 
@@ -28,7 +21,7 @@ public class RendererMultiblockTester extends TileEntitySpecialRenderer {
         float f1 = 0.6666667F;
         float f2 = 0.16f * f1;
 		
-        FontRenderer fontrenderer = this.getFontRenderer();
+        FontRenderer fontrenderer = this.func_147498_b();
         int color = 0;
         int identifier = -1;
         int numConnected = -1;

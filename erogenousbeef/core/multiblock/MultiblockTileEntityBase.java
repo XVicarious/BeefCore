@@ -1,17 +1,14 @@
 package erogenousbeef.core.multiblock;
 
+import erogenousbeef.core.common.BeefCoreLog;
+import erogenousbeef.core.common.CoordTriplet;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.chunk.IChunkProvider;
-import org.rebel.machina.multiblock.helper.*;
-import org.rebel.machina.multiblock.helper.IMultiblockPart;
-import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
-import org.rebel.machina.multiblock.helper.MultiblockRegistry;
-import org.rebel.machina.util.CoordTriplet;
-import org.rebel.machina.util.MachinaLog;
+
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,7 +19,7 @@ import java.util.Set;
  * Base logic class for Multiblock-connected tile entities. Most multiblock machines
  * should derive from this and implement their game logic in certain abstract methods.
  */
-public abstract class MultiblockTileEntityBase extends org.rebel.machina.multiblock.helper.IMultiblockPart {
+public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	private MultiblockControllerBase controller;
 	private boolean visited;
 
@@ -46,8 +43,8 @@ public abstract class MultiblockTileEntityBase extends org.rebel.machina.multibl
 		MultiblockControllerBase bestController = null;
 
 		// Look for a compatible controller in our neighboring parts.
-		org.rebel.machina.multiblock.helper.IMultiblockPart[] partsToCheck = getNeighboringParts();
-		for(org.rebel.machina.multiblock.helper.IMultiblockPart neighborPart : partsToCheck) {
+		IMultiblockPart[] partsToCheck = getNeighboringParts();
+		for(IMultiblockPart neighborPart : partsToCheck) {
 			if(neighborPart.isConnected()) {
 				MultiblockControllerBase candidate = neighborPart.getMultiblockController();
 				if(!candidate.getClass().equals(this.getMultiblockControllerType())) {
@@ -80,7 +77,7 @@ public abstract class MultiblockTileEntityBase extends org.rebel.machina.multibl
 	@Override
 	public void assertDetached() {
 		if(this.controller != null) {
-			MachinaLog.mbInfo("[assert] Part @ (%d, %d, %d) should be detached already, but detected that it was not. This is not a fatal error, and will be repaired, but is unusual.", xCoord, yCoord, zCoord);
+			BeefCoreLog.info("[assert] Part @ (%d, %d, %d) should be detached already, but detected that it was not. This is not a fatal error, and will be repaired, but is unusual.", xCoord, yCoord, zCoord);
 			this.controller = null;
 		}
 	}
@@ -299,7 +296,7 @@ public abstract class MultiblockTileEntityBase extends org.rebel.machina.multibl
 	public abstract MultiblockControllerBase createNewMultiblock();
 
 	@Override
-	public org.rebel.machina.multiblock.helper.IMultiblockPart[] getNeighboringParts() {
+	public IMultiblockPart[] getNeighboringParts() {
 		CoordTriplet[] neighbors = new CoordTriplet[] {
 				new CoordTriplet(this.xCoord-1, this.yCoord, this.zCoord),
 				new CoordTriplet(this.xCoord, this.yCoord-1, this.zCoord),
@@ -310,7 +307,7 @@ public abstract class MultiblockTileEntityBase extends org.rebel.machina.multibl
 		};
 
 		TileEntity te;
-		List<org.rebel.machina.multiblock.helper.IMultiblockPart> neighborParts = new ArrayList<org.rebel.machina.multiblock.helper.IMultiblockPart>();
+		List<IMultiblockPart> neighborParts = new ArrayList<IMultiblockPart>();
 		IChunkProvider chunkProvider = worldObj.getChunkProvider();
 		for(CoordTriplet neighbor : neighbors) {
 			if(!chunkProvider.chunkExists(neighbor.getChunkX(), neighbor.getChunkZ())) {
@@ -320,10 +317,10 @@ public abstract class MultiblockTileEntityBase extends org.rebel.machina.multibl
 
 			te = this.worldObj.getTileEntity(neighbor.x, neighbor.y, neighbor.z);
 			if(te instanceof org.rebel.machina.multiblock.helper.IMultiblockPart) {
-				neighborParts.add((org.rebel.machina.multiblock.helper.IMultiblockPart)te);
+				neighborParts.add((IMultiblockPart)te);
 			}
 		}
-		org.rebel.machina.multiblock.helper.IMultiblockPart[] tmp = new IMultiblockPart[neighborParts.size()];
+		IMultiblockPart[] tmp = new IMultiblockPart[neighborParts.size()];
 		return neighborParts.toArray(tmp);
 	}
 	

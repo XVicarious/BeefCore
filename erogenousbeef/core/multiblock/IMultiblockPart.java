@@ -1,10 +1,8 @@
 package erogenousbeef.core.multiblock;
 
+import erogenousbeef.core.common.CoordTriplet;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import org.rebel.machina.multiblock.helper.*;
-import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
-import org.rebel.machina.util.CoordTriplet;
 
 import java.util.Set;
 
@@ -27,7 +25,7 @@ public abstract class IMultiblockPart extends TileEntity {
 	/**
 	 * @return The attached multiblock controller for this tile entity.
 	 */
-	public abstract org.rebel.machina.multiblock.helper.MultiblockControllerBase getMultiblockController();
+	public abstract MultiblockControllerBase getMultiblockController();
 
 	/**
 	 * Returns the location of this tile entity in the world, in CoordTriplet form.
@@ -41,24 +39,24 @@ public abstract class IMultiblockPart extends TileEntity {
 	 * Called after this block has been attached to a new multiblock controller.
 	 * @param newController The new multiblock controller to which this tile entity is attached.
 	 */
-	public abstract void onAttached(org.rebel.machina.multiblock.helper.MultiblockControllerBase newController);
+	public abstract void onAttached(MultiblockControllerBase newController);
 
 	/**
 	 * Called after this block has been detached from a multiblock controller.
 	 * @param multiblockController The multiblock controller that no longer controls this tile entity.
 	 */
-	public abstract void onDetached(org.rebel.machina.multiblock.helper.MultiblockControllerBase multiblockController);
+	public abstract void onDetached(MultiblockControllerBase multiblockController);
 
 	/**
 	 * Called when this block is being orphaned. Use this to copy game-data values that
 	 * should persist despite a machine being broken.
 	 * This should NOT mark the part as disconnected. onDetached will be called immediately afterwards.
-	 * @see #onDetached(org.rebel.machina.multiblock.helper.MultiblockControllerBase)
+	 * //@see #onDetached(org.rebel.machina.multiblock.helper.MultiblockControllerBase)
 	 * @param oldController The controller which is orphaning this block.
 	 * @param oldControllerSize The number of connected blocks in the controller prior to shedding orphans.
 	 * @param newControllerSize The number of connected blocks in the controller after shedding orphans.
 	 */
-	public abstract void onOrphaned(org.rebel.machina.multiblock.helper.MultiblockControllerBase oldController, int oldControllerSize, int newControllerSize);
+	public abstract void onOrphaned(MultiblockControllerBase oldController, int oldControllerSize, int newControllerSize);
 
 	// Multiblock fuse/split helper methods. Here there be dragons.
 	/**
@@ -67,14 +65,14 @@ public abstract class IMultiblockPart extends TileEntity {
 	 * Override this in your game code!
 	 * @return A new Multiblock Controller, derived from MultiblockControllerBase.
 	 */
-	public abstract org.rebel.machina.multiblock.helper.MultiblockControllerBase createNewMultiblock();
+	public abstract MultiblockControllerBase createNewMultiblock();
 
 	/**
 	 * Retrieve the type of multiblock controller which governs this part.
 	 * Used to ensure that incompatible multiblocks are not merged.
 	 * @return The class/type of the multiblock controller which governs this type of part.
 	 */
-	public abstract Class<? extends org.rebel.machina.multiblock.helper.MultiblockControllerBase> getMultiblockControllerType();
+	public abstract Class<? extends MultiblockControllerBase> getMultiblockControllerType();
 
 	/**
 	 * Called when this block is moved from its current controller into a new controller.
@@ -82,7 +80,7 @@ public abstract class IMultiblockPart extends TileEntity {
 	 * lots of recalculation logic.
 	 * @param newController The new controller into which this tile entity is being merged.
 	 */
-	public abstract void onAssimilated(org.rebel.machina.multiblock.helper.MultiblockControllerBase newController);
+	public abstract void onAssimilated(MultiblockControllerBase newController);
 
 	// Multiblock connection data access.
 	// You generally shouldn't toy with these!
@@ -129,7 +127,7 @@ public abstract class IMultiblockPart extends TileEntity {
 	 * Note that no method is chunk-safe on the client, because ChunkProviderClient is stupid.
 	 * @return An array of references to neighboring IMultiblockPart tile entities.
 	 */
-	public abstract org.rebel.machina.multiblock.helper.IMultiblockPart[] getNeighboringParts();
+	public abstract IMultiblockPart[] getNeighboringParts();
 
 	// Multiblock business-logic callbacks - implement these!
 	/**
@@ -139,7 +137,7 @@ public abstract class IMultiblockPart extends TileEntity {
 	 * of the machine! They form an outer bounding box for the whole machine itself.
 	 * @param multiblockControllerBase The controller to which this part is being assembled.
 	 */
-	public abstract void onMachineAssembled(org.rebel.machina.multiblock.helper.MultiblockControllerBase multiblockControllerBase);
+	public abstract void onMachineAssembled(MultiblockControllerBase multiblockControllerBase);
 
 	/**
 	 * Called when the machine is broken for game reasons, e.g. a player removed a block

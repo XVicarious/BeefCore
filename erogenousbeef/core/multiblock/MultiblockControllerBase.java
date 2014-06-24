@@ -1,16 +1,12 @@
 package erogenousbeef.core.multiblock;
 
+import erogenousbeef.core.common.BeefCoreLog;
+import erogenousbeef.core.common.CoordTriplet;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
-import org.rebel.machina.multiblock.helper.*;
-import org.rebel.machina.multiblock.helper.IMultiblockPart;
-import org.rebel.machina.multiblock.helper.MultiblockRegistry;
-import org.rebel.machina.multiblock.helper.MultiblockValidationException;
-import org.rebel.machina.util.CoordTriplet;
-import org.rebel.machina.util.MachinaLog;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -62,7 +58,7 @@ public abstract class MultiblockControllerBase {
 	/**
 	 * Set whenever we validate the multiblock
 	 */
-	private org.rebel.machina.multiblock.helper.MultiblockValidationException lastValidationException;
+	private MultiblockValidationException lastValidationException;
 
 	protected boolean debugMode;
 
@@ -114,7 +110,7 @@ public abstract class MultiblockControllerBase {
 		CoordTriplet coord = part.getWorldLocation();
 
 		if(!connectedParts.add(part)) {
-            MachinaLog.mbInfo("[%s] Controller %s is double-adding part %d @ %s. This is unusual. If you encounter odd behavior, please tear down the machine and rebuild it.", (worldObj.isRemote ? "CLIENT" : "SERVER"), hashCode(), part.hashCode(), coord);
+            BeefCoreLog.info("[%s] Controller %s is double-adding part %d @ %s. This is unusual. If you encounter odd behavior, please tear down the machine and rebuild it.", (worldObj.isRemote ? "CLIENT" : "SERVER"), hashCode(), part.hashCode(), coord);
 		}
 
 		part.onAttached(this);
@@ -225,7 +221,7 @@ public abstract class MultiblockControllerBase {
 		// Strip out this part
 		onDetachBlock(part);
 		if(!connectedParts.remove(part)) {
-            MachinaLog.mbInfo("[%s] Double-removing part (%d) @ %d, %d, %d, this is unexpected and may cause problems. If you encounter anomalies, please tear down the reactor and rebuild it.", worldObj.isRemote ? "CLIENT" : "SERVER", part.hashCode(), part.xCoord, part.yCoord, part.zCoord);
+            BeefCoreLog.info("[%s] Double-removing part (%d) @ %d, %d, %d, this is unexpected and may cause problems. If you encounter anomalies, please tear down the reactor and rebuild it.", worldObj.isRemote ? "CLIENT" : "SERVER", part.hashCode(), part.xCoord, part.yCoord, part.zCoord);
 		}
 
 		if(connectedParts.isEmpty()) {
@@ -294,12 +290,12 @@ public abstract class MultiblockControllerBase {
 	 * @return An exception representing the last error encountered when trying to assemble this
 	 * multiblock, or null if there is no error.
 	 */
-	public org.rebel.machina.multiblock.helper.MultiblockValidationException getLastValidationException() { return lastValidationException; }
+	public MultiblockValidationException getLastValidationException() { return lastValidationException; }
 
 	/**
 	 * Checks if a machine is whole. If not, throws an exception with the reason why.
 	 */
-	protected abstract void isMachineWhole() throws org.rebel.machina.multiblock.helper.MultiblockValidationException;
+	protected abstract void isMachineWhole() throws MultiblockValidationException;
 
 	/**
 	 * Check if the machine is whole or not.
@@ -314,7 +310,7 @@ public abstract class MultiblockControllerBase {
 		try {
 			isMachineWhole();
 			isWhole = true;
-		} catch (org.rebel.machina.multiblock.helper.MultiblockValidationException e) {
+		} catch (MultiblockValidationException e) {
 			lastValidationException = e;
 			isWhole = false;
 		}
@@ -371,7 +367,7 @@ public abstract class MultiblockControllerBase {
 	 *
 	 * @param other The controller to merge into this one.
 	 */
-	public void assimilate(org.rebel.machina.multiblock.helper.MultiblockControllerBase other) {
+	public void assimilate(MultiblockControllerBase other) {
 		CoordTriplet otherReferenceCoord = other.getReferenceCoord();
 		if(otherReferenceCoord != null && getReferenceCoord().compareTo(otherReferenceCoord) >= 0) {
 			throw new IllegalArgumentException("The controller with the lowest minimum-coord value must consume the one with the higher coords");
@@ -401,7 +397,7 @@ public abstract class MultiblockControllerBase {
 	 * Essentially, forcibly tear down this object.
 	 * @param otherController The controller consuming this controller.
 	 */
-	private void _onAssimilated(org.rebel.machina.multiblock.helper.MultiblockControllerBase otherController) {
+	private void _onAssimilated(MultiblockControllerBase otherController) {
 		if(referenceCoord != null) {
 			if(worldObj.getChunkProvider().chunkExists(referenceCoord.getChunkX(), referenceCoord.getChunkZ())) {
 				TileEntity te = this.worldObj.getTileEntity(referenceCoord.x, referenceCoord.y, referenceCoord.z);
@@ -421,7 +417,7 @@ public abstract class MultiblockControllerBase {
 	 * Use this to absorb that controller's game data.
 	 * @param assimilated The controller whose uniqueness was added to our own.
 	 */
-	protected abstract void onAssimilate(org.rebel.machina.multiblock.helper.MultiblockControllerBase assimilated);
+	protected abstract void onAssimilate(MultiblockControllerBase assimilated);
 
 	/**
 	 * Callback. Called after this controller is assimilated into another controller.
@@ -430,12 +426,12 @@ public abstract class MultiblockControllerBase {
 	 * This is intended primarily for cleanup.
 	 * @param assimilator The controller which has assimilated this controller.
 	 */
-	protected abstract void onAssimilated(org.rebel.machina.multiblock.helper.MultiblockControllerBase assimilator);
+	protected abstract void onAssimilated(MultiblockControllerBase assimilator);
 
 	/**
 	 * Driver for the update loop. If the machine is assembled, runs
 	 * the game logic update method.
-	 * //@see org.rebel.machina.multiblock.helper.MultiblockControllerBase#update()
+	 * //@see MultiblockControllerBase#update()
 	 */
 	public final void updateMultiblockEntity() {
 		if(connectedParts.isEmpty()) {
@@ -498,10 +494,10 @@ public abstract class MultiblockControllerBase {
 	 * @param x X coordinate of the block being tested
 	 * @param y Y coordinate of the block being tested
 	 * @param z Z coordinate of the block being tested
-	 * @throws org.rebel.machina.multiblock.helper.MultiblockValidationException if the tested block is not allowed on the machine's frame
+	 * @throws MultiblockValidationException if the tested block is not allowed on the machine's frame
 	 */
-	protected void isBlockGoodForFrame(World world, int x, int y, int z) throws org.rebel.machina.multiblock.helper.MultiblockValidationException {
-		throw new org.rebel.machina.multiblock.helper.MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
+	protected void isBlockGoodForFrame(World world, int x, int y, int z) throws MultiblockValidationException {
+		throw new MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
 	}
 
 	/**
@@ -510,10 +506,10 @@ public abstract class MultiblockControllerBase {
 	 * @param x X coordinate of the block being tested
 	 * @param y Y coordinate of the block being tested
 	 * @param z Z coordinate of the block being tested
-	 * @throws org.rebel.machina.multiblock.helper.MultiblockValidationException if the tested block is not allowed on the machine's top face
+	 * @throws MultiblockValidationException if the tested block is not allowed on the machine's top face
 	 */
-	protected void isBlockGoodForTop(World world, int x, int y, int z) throws org.rebel.machina.multiblock.helper.MultiblockValidationException {
-		throw new org.rebel.machina.multiblock.helper.MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
+	protected void isBlockGoodForTop(World world, int x, int y, int z) throws MultiblockValidationException {
+		throw new MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
 	}
 
 	/**
@@ -522,10 +518,10 @@ public abstract class MultiblockControllerBase {
 	 * @param x X coordinate of the block being tested
 	 * @param y Y coordinate of the block being tested
 	 * @param z Z coordinate of the block being tested
-	 * @throws org.rebel.machina.multiblock.helper.MultiblockValidationException if the tested block is not allowed on the machine's bottom face
+	 * @throws MultiblockValidationException if the tested block is not allowed on the machine's bottom face
 	 */
-	protected void isBlockGoodForBottom(World world, int x, int y, int z) throws org.rebel.machina.multiblock.helper.MultiblockValidationException {
-		throw new org.rebel.machina.multiblock.helper.MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
+	protected void isBlockGoodForBottom(World world, int x, int y, int z) throws MultiblockValidationException {
+		throw new MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
 	}
 
 	/**
@@ -534,10 +530,10 @@ public abstract class MultiblockControllerBase {
 	 * @param x X coordinate of the block being tested
 	 * @param y Y coordinate of the block being tested
 	 * @param z Z coordinate of the block being tested
-	 * @throws org.rebel.machina.multiblock.helper.MultiblockValidationException if the tested block is not allowed on the machine's side faces
+	 * @throws MultiblockValidationException if the tested block is not allowed on the machine's side faces
 	 */
-	protected void isBlockGoodForSides(World world, int x, int y, int z) throws org.rebel.machina.multiblock.helper.MultiblockValidationException {
-		throw new org.rebel.machina.multiblock.helper.MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
+	protected void isBlockGoodForSides(World world, int x, int y, int z) throws MultiblockValidationException {
+		throw new MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
 	}
 
 	/**
@@ -546,9 +542,9 @@ public abstract class MultiblockControllerBase {
 	 * @param x X coordinate of the block being tested
 	 * @param y Y coordinate of the block being tested
 	 * @param z Z coordinate of the block being tested
-	 * @throws org.rebel.machina.multiblock.helper.MultiblockValidationException if the tested block is not allowed in the machine's interior
+	 * @throws MultiblockValidationException if the tested block is not allowed in the machine's interior
 	 */
-	protected void isBlockGoodForInterior(World world, int x, int y, int z) throws org.rebel.machina.multiblock.helper.MultiblockValidationException {
+	protected void isBlockGoodForInterior(World world, int x, int y, int z) throws MultiblockValidationException {
 		throw new MultiblockValidationException(String.format("%d, %d, %d - Block is not valid for use in the machine's interior", x, y, z));
 	}
 
@@ -628,7 +624,7 @@ public abstract class MultiblockControllerBase {
 	 * @param otherController The other multiblock controller.
 	 * @return True if this multiblock should consume the other, false otherwise.
 	 */
-	public boolean shouldConsume(org.rebel.machina.multiblock.helper.MultiblockControllerBase otherController) {
+	public boolean shouldConsume(MultiblockControllerBase otherController) {
 		if(!otherController.getClass().equals(getClass())) {
 			throw new IllegalArgumentException("Attempting to merge two multiblocks with different master classes - this should never happen!");
 		}
@@ -640,7 +636,7 @@ public abstract class MultiblockControllerBase {
 		else if(res > 0) { return false; }
 		else {
 			// Strip dead parts from both and retry
-            MachinaLog.mbInfo("[%s] Encountered two controllers with the same reference coordinate. Auditing connected parts and retrying.", worldObj.isRemote ? "CLIENT" : "SERVER");
+            BeefCoreLog.info("[%s] Encountered two controllers with the same reference coordinate. Auditing connected parts and retrying.", worldObj.isRemote ? "CLIENT" : "SERVER");
 			auditParts();
 			otherController.auditParts();
 
@@ -648,15 +644,15 @@ public abstract class MultiblockControllerBase {
 			if(res < 0) { return true; }
 			else if(res > 0) { return false; }
 			else {
-                MachinaLog.mbInfo("My Controller (%d): size (%d), parts: %s", hashCode(), connectedParts.size(), getPartsListString());
-                MachinaLog.mbInfo("Other Controller (%d): size (%d), coords: %s", otherController.hashCode(), otherController.connectedParts.size(), otherController.getPartsListString());
+                BeefCoreLog.info("My Controller (%d): size (%d), parts: %s", hashCode(), connectedParts.size(), getPartsListString());
+                BeefCoreLog.info("Other Controller (%d): size (%d), coords: %s", otherController.hashCode(), otherController.connectedParts.size(), otherController.getPartsListString());
 				throw new IllegalArgumentException("[" + (worldObj.isRemote?"CLIENT":"SERVER") + "] Two controllers with the same reference coord that somehow both have valid parts - this should never happen!");
 			}
 
 		}
 	}
 
-	private int _shouldConsume(org.rebel.machina.multiblock.helper.MultiblockControllerBase otherController) {
+	private int _shouldConsume(MultiblockControllerBase otherController) {
 		CoordTriplet myCoord = getReferenceCoord();
 		CoordTriplet theirCoord = otherController.getReferenceCoord();
 
@@ -693,7 +689,7 @@ public abstract class MultiblockControllerBase {
 
 		connectedParts.removeAll(deadParts);
         // Warning
-		MachinaLog.mbWarn("[%s] Controller found %d dead parts during an audit, %d parts remain attached", worldObj.isRemote ? "CLIENT" : "SERVER", deadParts.size(), connectedParts.size());
+        BeefCoreLog.warning("[%s] Controller found %d dead parts during an audit, %d parts remain attached", worldObj.isRemote ? "CLIENT" : "SERVER", deadParts.size(), connectedParts.size());
 	}
 
 	/**

@@ -1,14 +1,20 @@
 package erogenousbeef.test.common;
 
 import cpw.mods.fml.common.FMLLog;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
+import erogenousbeef.core.common.BeefCoreLog;
 import erogenousbeef.core.multiblock.IMultiblockPart;
 import erogenousbeef.core.multiblock.MultiblockControllerBase;
+import erogenousbeef.core.multiblock.MultiblockValidationException;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.World;
 
 public class TestMultiblockController extends MultiblockControllerBase {
+    @Override
+    protected void isMachineWhole() throws MultiblockValidationException {
+        ;
+    }
 
-	protected static int nextOrdinal = 0;
+    protected static int nextOrdinal = 0;
 	public int ordinal;
 	
 	public TestMultiblockController(World world) {
@@ -23,6 +29,7 @@ public class TestMultiblockController extends MultiblockControllerBase {
 
 	@Override
 	protected void onBlockAdded(IMultiblockPart newPart) {
+        BeefCoreLog.info("adding block");
 	}
 
 	@Override
@@ -31,7 +38,7 @@ public class TestMultiblockController extends MultiblockControllerBase {
 
 	@Override
 	protected int getMinimumNumberOfBlocksForAssembledMachine() {
-		return 26;
+		return 2;
 	}
 	
 	@Override
@@ -44,7 +51,7 @@ public class TestMultiblockController extends MultiblockControllerBase {
 
 	@Override
 	public void detachBlock(IMultiblockPart part, boolean chunkUnloading) {
-		FMLLog.info("[%s] Controller %d detaching block at %s", (worldObj.isRemote ? "CLIENT" : "SERVER"), ordinal, part.getWorldLocation());
+        BeefCoreLog.info("[%s] Controller %d detaching block at %s", (worldObj.isRemote ? "CLIENT" : "SERVER"), ordinal, part.getWorldLocation());
 		super.detachBlock(part, chunkUnloading);
 	}
 	
@@ -70,22 +77,22 @@ public class TestMultiblockController extends MultiblockControllerBase {
 	
 	@Override
 	protected void onMachinePaused() {
-		FMLLog.info("Machine %d PAUSED", hashCode());
+        BeefCoreLog.info("Machine %d PAUSED", hashCode());
 	}
 	
 	@Override
 	protected void onMachineAssembled() {
-		FMLLog.info("Machine %d ASSEMBLED", hashCode());
+        BeefCoreLog.info("Machine %d ASSEMBLED", hashCode());
 	}
 	
 	@Override
 	protected void onMachineDisassembled() {
-		FMLLog.info("Machine %d DISASSEMBLED", hashCode());
+        BeefCoreLog.info("Machine %d DISASSEMBLED", hashCode());
 	}
 
 	@Override
 	protected void onMachineRestored() {
-		FMLLog.info("Machine %d RESTORED", hashCode());
+        BeefCoreLog.info("Machine %d RESTORED", hashCode());
 	}
 
 	@Override
@@ -113,8 +120,8 @@ public class TestMultiblockController extends MultiblockControllerBase {
 	}
 	
 	@Override
-	protected boolean isBlockGoodForInterior(World world, int x, int y, int z) {
-		return true;
+	protected void isBlockGoodForInterior(World world, int x, int y, int z) {
+		return;
 	}
 
 	@Override
@@ -124,8 +131,4 @@ public class TestMultiblockController extends MultiblockControllerBase {
 		decodeDescriptionPacket(data);
 	}
 
-	@Override
-	public void getOrphanData(IMultiblockPart newOrphan, int oldSize,
-			int newSize, NBTTagCompound dataContainer) {
-	}
 }

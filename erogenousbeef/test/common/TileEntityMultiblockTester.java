@@ -1,20 +1,9 @@
 package erogenousbeef.test.common;
 
-import java.util.Set;
-
-import org.lwjgl.opengl.GL11;
-
-import cpw.mods.fml.common.network.PacketDispatcher;
-import erogenousbeef.core.common.CoordTriplet;
-import erogenousbeef.core.multiblock.IMultiblockPart;
 import erogenousbeef.core.multiblock.MultiblockControllerBase;
 import erogenousbeef.core.multiblock.MultiblockTileEntityBase;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.INetworkManager;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.Packet132TileEntityData;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+
 
 public class TileEntityMultiblockTester extends MultiblockTileEntityBase {
 	public static final int RED = 0xff0000;
@@ -60,33 +49,6 @@ public class TileEntityMultiblockTester extends MultiblockTileEntityBase {
 	@Override
 	public MultiblockControllerBase createNewMultiblock() {
 		return new TestMultiblockController(this.worldObj);
-	}
-
-	///// Game logic methods. In a real game, do real stuff here.
-	
-	@Override
-	public boolean isGoodForFrame() {
-		return true;
-	}
-
-	@Override
-	public boolean isGoodForSides() {
-		return true;
-	}
-
-	@Override
-	public boolean isGoodForTop() {
-		return true;
-	}
-
-	@Override
-	public boolean isGoodForBottom() {
-		return true;
-	}
-
-	@Override
-	public boolean isGoodForInterior() {
-		return false;
 	}
 
 	@Override

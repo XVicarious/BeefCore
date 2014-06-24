@@ -1,12 +1,7 @@
 package erogenousbeef.core.multiblock;
 
+import erogenousbeef.core.common.BeefCoreLog;
 import net.minecraft.world.World;
-import org.rebel.machina.multiblock.helper.*;
-import org.rebel.machina.multiblock.helper.IMultiblockPart;
-import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
-import org.rebel.machina.multiblock.helper.MultiblockWorldRegistry;
-import org.rebel.machina.util.MachinaLog;
-
 import java.util.HashMap;
 
 /**
@@ -58,7 +53,7 @@ public class MultiblockRegistry {
 	 * //@param chunkCoord The chunk at which this part is located.
 	 * @param part The part being loaded.
 	 */
-	public static void onPartAdded(World world, org.rebel.machina.multiblock.helper.IMultiblockPart part) {
+	public static void onPartAdded(World world, IMultiblockPart part) {
 		MultiblockWorldRegistry registry = getOrCreateRegistry(world);
 		registry.onPartAdded(part);
 	}
@@ -114,7 +109,7 @@ public class MultiblockRegistry {
 			registries.get(world).addDeadController(controller);
 		}
 		else {
-            MachinaLog.mbInfo("Controller %d in world %s marked as dead, but that world is not tracked! Controller is being ignored.", controller.hashCode(), world);
+            BeefCoreLog.info("Controller %d in world %s marked as dead, but that world is not tracked! Controller is being ignored.", controller.hashCode(), world);
 		}
 	}
 

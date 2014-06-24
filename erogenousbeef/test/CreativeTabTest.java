@@ -1,6 +1,8 @@
 package erogenousbeef.test;
 
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class CreativeTabTest extends CreativeTabs {
@@ -9,8 +11,8 @@ public class CreativeTabTest extends CreativeTabs {
 		super(par1, par2Str);
 	}
 
-	public ItemStack getIconItemStack() {
-		return super.getIconItemStack();
-	}
-	
+    @Override
+    public Item getTabIconItem() {
+        return Items.item_frame;
+    }
 }

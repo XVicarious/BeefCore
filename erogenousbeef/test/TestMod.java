@@ -4,22 +4,15 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraftforge.common.MinecraftForge;
-import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.Mod.Init;
 import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.Mod.PreInit;
-import cpw.mods.fml.common.Mod.ServerAboutToStart;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import erogenousbeef.core.multiblock.MultiblockEventHandler;
-import erogenousbeef.test.client.RendererMultiblockTester;
+import org.rebel.machina.multiblock.helper.MultiblockEventHandler;
 import erogenousbeef.test.common.BlockMultiblockTester;
 import erogenousbeef.test.common.ItemBlockMultiblockTester;
 import erogenousbeef.test.common.TileEntityMultiblockTester;
@@ -54,7 +47,7 @@ public class TestMod {
 		
 		// Register blocks
 		if(blockMultiblockTester == null) {
-			blockMultiblockTester = new BlockMultiblockTester(4000, Material.iron);
+			blockMultiblockTester = new BlockMultiblockTester(Material.iron);
 			GameRegistry.registerBlock(blockMultiblockTester, ItemBlockMultiblockTester.class, "MultiblockTester");
 		}
 	}

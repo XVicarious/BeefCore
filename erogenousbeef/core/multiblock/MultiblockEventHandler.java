@@ -6,7 +6,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
-import org.rebel.machina.multiblock.helper.MultiblockRegistry;
 
 /**
  * In your mod, subscribe this on both the client and server sides side to handle chunk
@@ -20,7 +19,7 @@ public class MultiblockEventHandler {
 	public void onChunkLoad(ChunkEvent.Load loadEvent) {
 		Chunk chunk = loadEvent.getChunk();
 		World world = loadEvent.world;
-		org.rebel.machina.multiblock.helper.MultiblockRegistry.onChunkLoaded(world, chunk.xPosition, chunk.zPosition);
+		MultiblockRegistry.onChunkLoaded(world, chunk.xPosition, chunk.zPosition);
 	}
 
 	// Cleanup, for nice memory usageness
