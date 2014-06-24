@@ -1,11 +1,12 @@
 package erogenousbeef.core.multiblock;
 
+import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraftforge.event.EventPriority;
-import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
+import org.rebel.machina.multiblock.helper.MultiblockRegistry;
 
 /**
  * In your mod, subscribe this on both the client and server sides side to handle chunk
@@ -14,16 +15,18 @@ import net.minecraftforge.event.world.WorldEvent;
  * process any blocks that are in chunks which are still loading.
  */
 public class MultiblockEventHandler {
-	@ForgeSubscribe(priority = EventPriority.NORMAL)
+
+	@SubscribeEvent(priority = EventPriority.NORMAL)
 	public void onChunkLoad(ChunkEvent.Load loadEvent) {
 		Chunk chunk = loadEvent.getChunk();
 		World world = loadEvent.world;
-		MultiblockRegistry.onChunkLoaded(world, chunk.xPosition, chunk.zPosition);
+		org.rebel.machina.multiblock.helper.MultiblockRegistry.onChunkLoaded(world, chunk.xPosition, chunk.zPosition);
 	}
 
 	// Cleanup, for nice memory usageness
-	@ForgeSubscribe(priority = EventPriority.NORMAL)
+	@SubscribeEvent(priority = EventPriority.NORMAL)
 	public void onWorldUnload(WorldEvent.Unload unloadWorldEvent) {
 		MultiblockRegistry.onWorldUnloaded(unloadWorldEvent.world);
 	}
+
 }

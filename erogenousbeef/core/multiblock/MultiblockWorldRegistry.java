@@ -1,18 +1,15 @@
 package erogenousbeef.core.multiblock;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
-import erogenousbeef.core.common.BeefCoreLog;
-import erogenousbeef.core.common.CoordTriplet;
+import org.rebel.machina.multiblock.helper.*;
+import org.rebel.machina.multiblock.helper.IMultiblockPart;
+import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
+import org.rebel.machina.util.CoordTriplet;
+import org.rebel.machina.util.MachinaLog;
+
+import java.util.*;
 
 /**
  * This class manages all the multiblock controllers that exist in a given world,
@@ -25,9 +22,9 @@ public class MultiblockWorldRegistry {
 
 	private World worldObj;
 	
-	private Set<MultiblockControllerBase> controllers;		// Active controllers
-	private Set<MultiblockControllerBase> dirtyControllers;	// Controllers whose parts lists have changed
-	private Set<MultiblockControllerBase> deadControllers;	// Controllers which are empty
+	private Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> controllers;		// Active controllers
+	private Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> dirtyControllers;	// Controllers whose parts lists have changed
+	private Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> deadControllers;	// Controllers which are empty
 
 	// A list of orphan parts - parts which currently have no master, but should seek one this tick
 	// Indexed by the hashed chunk coordinate
@@ -36,24 +33,24 @@ public class MultiblockWorldRegistry {
 
 	// A list of parts which have been detached during internal operations
 	private Set<IMultiblockPart> detachedParts;
-	
+
 	// A list of parts whose chunks have not yet finished loading
 	// They will be added to the orphan list when they are finished loading.
 	// Indexed by the hashed chunk coordinate
 	// This can be added-to asynchronously via chunk loads!
 	private HashMap<Long, Set<IMultiblockPart>> partsAwaitingChunkLoad;
-	
+
 	// Mutexes to protect lists which may be changed due to asynchronous events, such as chunk loads
 	private Object partsAwaitingChunkLoadMutex;
 	private Object orphanedPartsMutex;
-	
+
 	public MultiblockWorldRegistry(World world) {
 		worldObj = world;
-		
-		controllers = new HashSet<MultiblockControllerBase>();
-		deadControllers = new HashSet<MultiblockControllerBase>();
-		dirtyControllers = new HashSet<MultiblockControllerBase>();
-		
+
+		controllers = new HashSet<org.rebel.machina.multiblock.helper.MultiblockControllerBase>();
+		deadControllers = new HashSet<org.rebel.machina.multiblock.helper.MultiblockControllerBase>();
+		dirtyControllers = new HashSet<org.rebel.machina.multiblock.helper.MultiblockControllerBase>();
+
 		detachedParts = new HashSet<IMultiblockPart>();
 		orphanedParts = new HashSet<IMultiblockPart>();
 
@@ -61,14 +58,14 @@ public class MultiblockWorldRegistry {
 		partsAwaitingChunkLoadMutex = new Object();
 		orphanedPartsMutex = new Object();
 	}
-	
+
 	/**
 	 * Called before Tile Entities are ticked in the world. Run gamelogic.
-	 * @param world The world being ticked
+	 * //@param world The world being ticked
 	 */
 	public void tickStart() {
 		if(controllers.size() > 0) {
-			for(MultiblockControllerBase controller : controllers) {
+			for(org.rebel.machina.multiblock.helper.MultiblockControllerBase controller : controllers) {
 				if(controller.worldObj == worldObj && controller.worldObj.isRemote == worldObj.isRemote) {
 					if(controller.isEmpty()) {
 						// This happens on the server when the user breaks the last block. It's fine.
@@ -83,20 +80,20 @@ public class MultiblockWorldRegistry {
 			}
 		}
 	}
-	
+
 	/**
 	 * Called after Tile Entities are ticked in the world. Do bookkeeping.
-	 * @param world The world being ticked
+	 * //@param world The world being ticked
 	 */
 	public void tickEnd() {
 		IChunkProvider chunkProvider = worldObj.getChunkProvider();
 		CoordTriplet coord;
 
 		// Merge pools - sets of adjacent machines which should be merged later on in processing
-		List<Set<MultiblockControllerBase>> mergePools = null;
+		List<Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase>> mergePools = null;
 		if(orphanedParts.size() > 0) {
 			Set<IMultiblockPart> orphansToProcess = null;
-			
+
 			// Keep the synchronized block small. We can't iterate over orphanedParts directly
 			// because the client does not know which chunks are actually loaded, so attachToNeighbors()
 			// is not chunk-safe on the client, because Minecraft is stupid.
@@ -107,10 +104,10 @@ public class MultiblockWorldRegistry {
 					orphanedParts = new HashSet<IMultiblockPart>();
 				}
 			}
-			
+
 			if(orphansToProcess != null && orphansToProcess.size() > 0) {
-				Set<MultiblockControllerBase> compatibleControllers;
-				
+				Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> compatibleControllers;
+
 				// Process orphaned blocks
 				// These are blocks that exist in a valid chunk and require a controller
 				for(IMultiblockPart orphan : orphansToProcess) {
@@ -122,36 +119,36 @@ public class MultiblockWorldRegistry {
 					// This can occur on slow machines.
 					if(orphan.isInvalid()) { continue; }
 
-					if(worldObj.getBlockTileEntity(coord.x, coord.y, coord.z) != orphan) {
+					if(worldObj.getTileEntity(coord.x, coord.y, coord.z) != orphan) {
 						// This block has been replaced by another.
 						continue;
 					}
-					
+
 					// THIS IS THE ONLY PLACE WHERE PARTS ATTACH TO MACHINES
 					// Try to attach to a neighbor's master controller
 					compatibleControllers = orphan.attachToNeighbors();
 					if(compatibleControllers == null) {
 						// FOREVER ALONE! Create and register a new controller.
 						// THIS IS THE ONLY PLACE WHERE NEW CONTROLLERS ARE CREATED.
-						MultiblockControllerBase newController = orphan.createNewMultiblock();
+						org.rebel.machina.multiblock.helper.MultiblockControllerBase newController = orphan.createNewMultiblock();
 						newController.attachBlock(orphan);
 						this.controllers.add(newController);
 					}
 					else if(compatibleControllers.size() > 1) {
-						if(mergePools == null) { mergePools = new ArrayList<Set<MultiblockControllerBase>>(); }
+						if(mergePools == null) { mergePools = new ArrayList<Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase>>(); }
 
 						// THIS IS THE ONLY PLACE WHERE MERGES ARE DETECTED
 						// Multiple compatible controllers indicates an impending merge.
 						// Locate the appropriate merge pool(s)
 						boolean hasAddedToPool = false;
-						List<Set<MultiblockControllerBase>> candidatePools = new ArrayList<Set<MultiblockControllerBase>>();
-						for(Set<MultiblockControllerBase> candidatePool : mergePools) {
+						List<Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase>> candidatePools = new ArrayList<Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase>>();
+						for(Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> candidatePool : mergePools) {
 							if(!Collections.disjoint(candidatePool, compatibleControllers)) {
 								// They share at least one element, so that means they will all touch after the merge
 								candidatePools.add(candidatePool);
 							}
 						}
-						
+
 						if(candidatePools.size() <= 0) {
 							// No pools nearby, create a new merge pool
 							mergePools.add(compatibleControllers);
@@ -162,8 +159,8 @@ public class MultiblockWorldRegistry {
 						}
 						else {
 							// Multiple pools- merge into one, then add the compatible controllers
-							Set<MultiblockControllerBase> masterPool = candidatePools.get(0);
-							Set<MultiblockControllerBase> consumedPool;
+							Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> masterPool = candidatePools.get(0);
+							Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> consumedPool;
 							for(int i = 1; i < candidatePools.size(); i++) {
 								consumedPool = candidatePools.get(i);
 								masterPool.addAll(consumedPool);
@@ -181,22 +178,22 @@ public class MultiblockWorldRegistry {
 			// into the "master" machine.
 			// To do this, we combine lists of machines that are touching one another and therefore
 			// should voltron the fuck up.
-			for(Set<MultiblockControllerBase> mergePool : mergePools) {
+			for(Set<org.rebel.machina.multiblock.helper.MultiblockControllerBase> mergePool : mergePools) {
 				// Search for the new master machine, which will take over all the blocks contained in the other machines
-				MultiblockControllerBase newMaster = null;
-				for(MultiblockControllerBase controller : mergePool) {
+				org.rebel.machina.multiblock.helper.MultiblockControllerBase newMaster = null;
+				for(org.rebel.machina.multiblock.helper.MultiblockControllerBase controller : mergePool) {
 					if(newMaster == null || controller.shouldConsume(newMaster)) {
 						newMaster = controller;
 					}
 				}
-				
+
 				if(newMaster == null) {
-					BeefCoreLog.severe("Multiblock system checked a merge pool of size %d, found no master candidates. This should never happen.", mergePool.size());
+                    MachinaLog.mbInfo("Multiblock system checked a merge pool of size %d, found no master candidates. This should never happen.", mergePool.size());
 				}
 				else {
 					// Merge all the other machines into the master machine, then unregister them
 					addDirtyController(newMaster);
-					for(MultiblockControllerBase controller : mergePool) {
+					for(org.rebel.machina.multiblock.helper.MultiblockControllerBase controller : mergePool) {
 						if(controller != newMaster) {
 							newMaster.assimilate(controller);
 							addDeadController(controller);
@@ -212,13 +209,13 @@ public class MultiblockWorldRegistry {
 		// physically connected to their master.
 		if(dirtyControllers.size() > 0) {
 			Set<IMultiblockPart> newlyDetachedParts = null;
-			for(MultiblockControllerBase controller : dirtyControllers) {
+			for(org.rebel.machina.multiblock.helper.MultiblockControllerBase controller : dirtyControllers) {
 				// Tell the machine to check if any parts are disconnected.
 				// It should return a set of parts which are no longer connected.
 				// POSTCONDITION: The controller must have informed those parts that
 				// they are no longer connected to this machine.
 				newlyDetachedParts = controller.checkForDisconnections();
-				
+
 				if(!controller.isEmpty()) {
 					controller.recalculateMinMaxCoords();
 					controller.checkIfMachineIsWhole();
@@ -226,33 +223,33 @@ public class MultiblockWorldRegistry {
 				else {
 					addDeadController(controller);
 				}
-				
+
 				if(newlyDetachedParts != null && newlyDetachedParts.size() > 0) {
 					// Controller has shed some parts - add them to the detached list for delayed processing
 					detachedParts.addAll(newlyDetachedParts);
 				}
 			}
-			
+
 			dirtyControllers.clear();
 		}
-		
+
 		// Unregister dead controllers
 		if(deadControllers.size() > 0) {
-			for(MultiblockControllerBase controller : deadControllers) {
+			for(org.rebel.machina.multiblock.helper.MultiblockControllerBase controller : deadControllers) {
 				// Go through any controllers which have marked themselves as potentially dead.
 				// Validate that they are empty/dead, then unregister them.
 				if(!controller.isEmpty()) {
-					BeefCoreLog.severe("Found a non-empty controller. Forcing it to shed its blocks and die. This should never happen!");
+                    MachinaLog.mbInfo("Found a non-empty controller. Forcing it to shed its blocks and die. This should never happen!");
 					detachedParts.addAll(controller.detachAllBlocks());
 				}
 
 				// THIS IS THE ONLY PLACE WHERE CONTROLLERS ARE UNREGISTERED.
 				this.controllers.remove(controller);
 			}
-			
+
 			deadControllers.clear();
 		}
-		
+
 		// Process detached blocks
 		// Any blocks which have been detached this tick should be moved to the orphaned
 		// list, and will be checked next tick to see if their chunk is still loaded.
@@ -260,7 +257,7 @@ public class MultiblockWorldRegistry {
 			// Ensure parts know they're detached
 			part.assertDetached();
 		}
-		
+
 		addAllOrphanedPartsThreadsafe(detachedParts);
 		detachedParts.clear();
 	}
@@ -273,7 +270,7 @@ public class MultiblockWorldRegistry {
 	 */
 	public void onPartAdded(IMultiblockPart part) {
 		CoordTriplet worldLocation = part.getWorldLocation();
-		
+
 		if(!worldObj.getChunkProvider().chunkExists(worldLocation.getChunkX(), worldLocation.getChunkZ())) {
 			// Part goes into the waiting-for-chunk-load list
 			Set<IMultiblockPart> partSet;
@@ -286,7 +283,7 @@ public class MultiblockWorldRegistry {
 				else {
 					partSet = partsAwaitingChunkLoad.get(chunkHash);
 				}
-				
+
 				partSet.add(part);
 			}
 		}
@@ -295,7 +292,7 @@ public class MultiblockWorldRegistry {
 			addOrphanedPartThreadsafe(part);
 		}
 	}
-	
+
 	/**
 	 * Called when a part is removed from the world, via user action or via chunk unloads.
 	 * This part is removed from any lists in which it may be, and its machine is marked for recalculation.
@@ -305,7 +302,7 @@ public class MultiblockWorldRegistry {
 		CoordTriplet coord = part.getWorldLocation();
 		if(coord != null) {
 			long hash = coord.getChunkXZHash();
-			
+
 			if(partsAwaitingChunkLoad.containsKey(hash)) {
 				synchronized(partsAwaitingChunkLoadMutex) {
 					if(partsAwaitingChunkLoad.containsKey(hash)) {
@@ -324,7 +321,7 @@ public class MultiblockWorldRegistry {
 				orphanedParts.remove(part);
 			}
 		}
-		
+
 		part.assertDetached();
 	}
 
@@ -336,17 +333,17 @@ public class MultiblockWorldRegistry {
 		controllers.clear();
 		deadControllers.clear();
 		dirtyControllers.clear();
-		
+
 		detachedParts.clear();
-		
+
 		synchronized(partsAwaitingChunkLoadMutex) {
 			partsAwaitingChunkLoad.clear();
 		}
-		
+
 		synchronized(orphanedPartsMutex) {
 			orphanedParts.clear();
 		}
-		
+
 		worldObj = null;
 	}
 
@@ -354,7 +351,7 @@ public class MultiblockWorldRegistry {
 	 * Called when a chunk has finished loading. Adds all of the parts which are awaiting
 	 * load to the list of parts which are orphans and therefore will be added to machines
 	 * after the next world tick.
-	 * 
+	 *
 	 * @param chunkX Chunk X coordinate (world coordate >> 4) of the chunk that was loaded
 	 * @param chunkZ Chunk Z coordinate (world coordate >> 4) of the chunk that was loaded
 	 */
@@ -374,25 +371,25 @@ public class MultiblockWorldRegistry {
 	 * Registers a controller as dead. It will be cleaned up at the end of the next world tick.
 	 * Note that a controller must shed all of its blocks before being marked as dead, or the system
 	 * will complain at you.
-	 * 
+	 *
 	 * @param deadController The controller which is dead.
 	 */
-	public void addDeadController(MultiblockControllerBase deadController) {
+	public void addDeadController(org.rebel.machina.multiblock.helper.MultiblockControllerBase deadController) {
 		this.deadControllers.add(deadController);
 	}
 
 	/**
 	 * Registers a controller as dirty - its list of attached blocks has changed, and it
 	 * must be re-checked for assembly and, possibly, for orphans.
-	 * 
+	 *
 	 * @param dirtyController The dirty controller.
 	 */
 	public void addDirtyController(MultiblockControllerBase dirtyController) {
 		this.dirtyControllers.add(dirtyController);
 	}
-	
+
 	/* *** PRIVATE HELPERS *** */
-	
+
 	private void addOrphanedPartThreadsafe(IMultiblockPart part) {
 		synchronized(orphanedPartsMutex) {
 			orphanedParts.add(part);

@@ -1,9 +1,13 @@
 package erogenousbeef.core.multiblock;
 
-import java.util.HashMap;
-
 import net.minecraft.world.World;
-import erogenousbeef.core.common.BeefCoreLog;
+import org.rebel.machina.multiblock.helper.*;
+import org.rebel.machina.multiblock.helper.IMultiblockPart;
+import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
+import org.rebel.machina.multiblock.helper.MultiblockWorldRegistry;
+import org.rebel.machina.util.MachinaLog;
+
+import java.util.HashMap;
 
 /**
  * This is a very static singleton registry class which directs incoming events to sub-objects, which
@@ -13,7 +17,7 @@ import erogenousbeef.core.common.BeefCoreLog;
 public class MultiblockRegistry {
 	// World > WorldRegistry map
 	private static HashMap<World, MultiblockWorldRegistry> registries = new HashMap<World, MultiblockWorldRegistry>();
-	
+
 	/**
 	 * Called before Tile Entities are ticked in the world. Do bookkeeping here.
 	 * @param world The world being ticked
@@ -24,7 +28,7 @@ public class MultiblockRegistry {
 			registry.tickStart();
 		}
 	}
-	
+
 	/**
 	 * Called after Tile Entities are ticked in the world.
 	 * @param world The world being ticked
@@ -35,12 +39,12 @@ public class MultiblockRegistry {
 			registry.tickEnd();
 		}
 	}
-	
+
 	/**
 	 * Called when the world has finished loading a chunk.
 	 * @param world The world which has finished loading a chunk
-	 * @param hashedChunkCoord The hashed XZ coordinates of the chunk.
-	 * @param zPosition 
+	 * //@param hashedChunkCoord The hashed XZ coordinates of the chunk.
+	 * //@param zPosition
 	 */
 	public static void onChunkLoaded(World world, int chunkX, int chunkZ) {
 		if(registries.containsKey(world)) {
@@ -51,27 +55,27 @@ public class MultiblockRegistry {
 	/**
 	 * Register a new part in the system. The part has been created either through user action or via a chunk loading.
 	 * @param world The world into which this part is loading.
-	 * @param chunkCoord The chunk at which this part is located.
+	 * //@param chunkCoord The chunk at which this part is located.
 	 * @param part The part being loaded.
 	 */
-	public static void onPartAdded(World world, IMultiblockPart part) {
+	public static void onPartAdded(World world, org.rebel.machina.multiblock.helper.IMultiblockPart part) {
 		MultiblockWorldRegistry registry = getOrCreateRegistry(world);
 		registry.onPartAdded(part);
 	}
-	
+
 	/**
 	 * Call to remove a part from world lists.
-	 * @param worldObj The world from which a multiblock part is being removed.
+	 * //@param worldObj The world from which a multiblock part is being removed.
 	 * @param part The part being removed.
 	 */
 	public static void onPartRemovedFromWorld(World world, IMultiblockPart part) {
 		if(registries.containsKey(world)) {
 			registries.get(world).onPartRemovedFromWorld(part);
 		}
-		
+
 	}
 
-	
+
 	/**
 	 * Called whenever a world is unloaded. Unload the relevant registry, if we have one.
 	 * @param world The world being unloaded.
@@ -87,7 +91,7 @@ public class MultiblockRegistry {
 	 * Call to mark a controller as dirty. Dirty means that parts have
 	 * been added or removed this tick.
 	 * @param world The world containing the multiblock
-	 * @param controller The dirty controller 
+	 * @param controller The dirty controller
 	 */
 	public static void addDirtyController(World world,
 			MultiblockControllerBase controller) {
@@ -98,7 +102,7 @@ public class MultiblockRegistry {
 			throw new IllegalArgumentException("Adding a dirty controller to a world that has no registered controllers!");
 		}
 	}
-	
+
 	/**
 	 * Call to mark a controller as dead. It should only be marked as dead
 	 * when it has no connected parts. It will be removed after the next world tick.
@@ -110,12 +114,12 @@ public class MultiblockRegistry {
 			registries.get(world).addDeadController(controller);
 		}
 		else {
-			BeefCoreLog.warning("Controller %d in world %s marked as dead, but that world is not tracked! Controller is being ignored.", controller.hashCode(), world);
+            MachinaLog.mbInfo("Controller %d in world %s marked as dead, but that world is not tracked! Controller is being ignored.", controller.hashCode(), world);
 		}
 	}
-	
+
 	/// *** PRIVATE HELPERS *** ///
-	
+
 	private static MultiblockWorldRegistry getOrCreateRegistry(World world) {
 		if(registries.containsKey(world)) {
 			return registries.get(world);

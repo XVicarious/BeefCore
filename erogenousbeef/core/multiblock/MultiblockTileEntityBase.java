@@ -1,27 +1,31 @@
 package erogenousbeef.core.multiblock;
 
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.chunk.IChunkProvider;
+import org.rebel.machina.multiblock.helper.*;
+import org.rebel.machina.multiblock.helper.IMultiblockPart;
+import org.rebel.machina.multiblock.helper.MultiblockControllerBase;
+import org.rebel.machina.multiblock.helper.MultiblockRegistry;
+import org.rebel.machina.util.CoordTriplet;
+import org.rebel.machina.util.MachinaLog;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.INetworkManager;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.Packet132TileEntityData;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.chunk.IChunkProvider;
-import erogenousbeef.core.common.BeefCoreLog;
-import erogenousbeef.core.common.CoordTriplet;
-
 /**
  * Base logic class for Multiblock-connected tile entities. Most multiblock machines
  * should derive from this and implement their game logic in certain abstract methods.
  */
-public abstract class MultiblockTileEntityBase extends IMultiblockPart {
+public abstract class MultiblockTileEntityBase extends org.rebel.machina.multiblock.helper.IMultiblockPart {
 	private MultiblockControllerBase controller;
 	private boolean visited;
-	
+
 	private boolean saveMultiblockData;
 	private NBTTagCompound cachedMultiblockData;
 	private boolean paused;
@@ -40,17 +44,17 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public Set<MultiblockControllerBase> attachToNeighbors() {
 		Set<MultiblockControllerBase> controllers = null;
 		MultiblockControllerBase bestController = null;
-		
+
 		// Look for a compatible controller in our neighboring parts.
-		IMultiblockPart[] partsToCheck = getNeighboringParts();
-		for(IMultiblockPart neighborPart : partsToCheck) {
+		org.rebel.machina.multiblock.helper.IMultiblockPart[] partsToCheck = getNeighboringParts();
+		for(org.rebel.machina.multiblock.helper.IMultiblockPart neighborPart : partsToCheck) {
 			if(neighborPart.isConnected()) {
 				MultiblockControllerBase candidate = neighborPart.getMultiblockController();
 				if(!candidate.getClass().equals(this.getMultiblockControllerType())) {
 					// Skip multiblocks with incompatible types
 					continue;
 				}
-				
+
 				if(controllers == null) {
 					controllers = new HashSet<MultiblockControllerBase>();
 					bestController = candidate;
@@ -62,7 +66,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 				controllers.add(candidate);
 			}
 		}
-		
+
 		// If we've located a valid neighboring controller, attach to it.
 		if(bestController != null) {
 			// attachBlock will call onAttached, which will set the controller.
@@ -76,24 +80,24 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	@Override
 	public void assertDetached() {
 		if(this.controller != null) {
-			BeefCoreLog.info("[assert] Part @ (%d, %d, %d) should be detached already, but detected that it was not. This is not a fatal error, and will be repaired, but is unusual.", xCoord, yCoord, zCoord);
+			MachinaLog.mbInfo("[assert] Part @ (%d, %d, %d) should be detached already, but detected that it was not. This is not a fatal error, and will be repaired, but is unusual.", xCoord, yCoord, zCoord);
 			this.controller = null;
 		}
 	}
-	
+
 	///// Overrides from base TileEntity methods
-	
+
 	@Override
 	public void readFromNBT(NBTTagCompound data) {
 		super.readFromNBT(data);
-		
+
 		// We can't directly initialize a multiblock controller yet, so we cache the data here until
 		// we receive a validate() call, which creates the controller and hands off the cached data.
 		if(data.hasKey("multiblockData")) {
 			this.cachedMultiblockData = data.getCompoundTag("multiblockData");
 		}
 	}
-	
+
 	@Override
 	public void writeToNBT(NBTTagCompound data) {
 		super.writeToNBT(data);
@@ -101,10 +105,10 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 		if(isMultiblockSaveDelegate() && isConnected()) {
 			NBTTagCompound multiblockData = new NBTTagCompound();
 			this.controller.writeToNBT(multiblockData);
-			data.setCompoundTag("multiblockData", multiblockData);
+			data.setTag("multiblockData", multiblockData);
 		}
 	}
-		
+
 	/**
 	 * Generally, TileEntities that are part of a multiblock should not subscribe to updates
 	 * from the main game loop. Instead, you should have lists of TileEntities which need to
@@ -113,7 +117,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	 */
 	@Override
 	public boolean canUpdate() { return false; }
-	
+
 	/**
 	 * Called when a block is removed by game actions, such as a player breaking the block
 	 * or the block being changed into another block.
@@ -124,7 +128,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 		super.invalidate();
 		detachSelf(false);
 	}
-	
+
 	/**
 	 * Called from Minecraft's tile entity loop, after all tile entities have been ticked,
 	 * as the chunk in which this tile entity is contained is unloading.
@@ -143,7 +147,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	 * been initialized, but any attempts to read data about the world can cause infinite loops -
 	 * if you call getTileEntity on this TileEntity's coordinate from within validate(), you will
 	 * blow your call stack.
-	 * 
+	 *
 	 * TL;DR: Here there be dragons.
 	 * @see net.minecraft.tileentity.TileEntity#validate()
 	 */
@@ -158,35 +162,35 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public Packet getDescriptionPacket() {
 		NBTTagCompound packetData = new NBTTagCompound();
 		encodeDescriptionPacket(packetData);
-		return new Packet132TileEntityData(xCoord, yCoord, zCoord, 0, packetData);
+		return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, packetData);
 	}
-	
+
 	@Override
-	public void onDataPacket(INetworkManager network, Packet132TileEntityData packet) {
-		decodeDescriptionPacket(packet.data);
+	public void onDataPacket(NetworkManager network, S35PacketUpdateTileEntity packet) {
+		decodeDescriptionPacket(packet.func_148857_g());
 	}
-	
+
 	///// Things to override in most implementations (IMultiblockPart)
 	/**
 	 * Override this to easily modify the description packet's data without having
 	 * to worry about sending the packet itself.
 	 * Decode this data in decodeDescriptionPacket.
 	 * @param packetData An NBT compound tag into which you should write your custom description data.
-	 * @see erogenousbeef.core.multiblock.MultiblockTileEntityBase#decodeDescriptionPacket(NBTTagCompound)
+	 * @see org.rebel.machina.multiblock.helper.MultiblockTileEntityBase#decodeDescriptionPacket(net.minecraft.nbt.NBTTagCompound)
 	 */
 	protected void encodeDescriptionPacket(NBTTagCompound packetData) {
 		if(this.isMultiblockSaveDelegate() && isConnected()) {
 			NBTTagCompound tag = new NBTTagCompound();
 			getMultiblockController().formatDescriptionPacket(tag);
-			packetData.setCompoundTag("multiblockData", tag);
+			packetData.setTag("multiblockData", tag);
 		}
 	}
-	
+
 	/**
 	 * Override this to easily read in data from a TileEntity's description packet.
 	 * Encoded in encodeDescriptionPacket.
 	 * @param packetData The NBT data from the tile entity's description packet.
-	 * @see erogenousbeef.core.multiblock.MultiblockTileEntityBase#encodeDescriptionPacket(NBTTagCompound)
+	 * @see org.rebel.machina.multiblock.helper.MultiblockTileEntityBase#encodeDescriptionPacket(net.minecraft.nbt.NBTTagCompound)
 	 */
 	protected void decodeDescriptionPacket(NBTTagCompound packetData) {
 		if(packetData.hasKey("multiblockData")) {
@@ -205,19 +209,19 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public boolean hasMultiblockSaveData() {
 		return this.cachedMultiblockData != null;
 	}
-	
+
 	@Override
 	public NBTTagCompound getMultiblockSaveData() {
 		return this.cachedMultiblockData;
 	}
-	
+
 	@Override
 	public void onMultiblockDataAssimilated() {
 		this.cachedMultiblockData = null;
 	}
 
 	///// Game logic callbacks (IMultiblockPart)
-	
+
 	@Override
 	public abstract void onMachineAssembled(MultiblockControllerBase multiblockControllerBase);
 
@@ -231,7 +235,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public abstract void onMachineDeactivated();
 
 	///// Miscellaneous multiblock-assembly callbacks and support methods (IMultiblockPart)
-	
+
 	@Override
 	public boolean isConnected() {
 		return (controller != null);
@@ -246,7 +250,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public CoordTriplet getWorldLocation() {
 		return new CoordTriplet(this.xCoord, this.yCoord, this.zCoord);
 	}
-	
+
 	@Override
 	public void becomeMultiblockSaveDelegate() {
 		this.saveMultiblockData = true;
@@ -256,7 +260,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public void forfeitMultiblockSaveDelegate() {
 		this.saveMultiblockData = false;
 	}
-	
+
 	@Override
 	public boolean isMultiblockSaveDelegate() { return this.saveMultiblockData; }
 
@@ -264,12 +268,12 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 	public void setUnvisited() {
 		this.visited = false;
 	}
-	
+
 	@Override
 	public void setVisited() {
 		this.visited = true;
 	}
-	
+
 	@Override
 	public boolean isVisited() {
 		return this.visited;
@@ -280,12 +284,12 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 		assert(this.controller != newController);
 		this.controller = newController;
 	}
-	
+
 	@Override
 	public void onAttached(MultiblockControllerBase newController) {
 		this.controller = newController;
 	}
-	
+
 	@Override
 	public void onDetached(MultiblockControllerBase oldController) {
 		this.controller = null;
@@ -293,9 +297,9 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 
 	@Override
 	public abstract MultiblockControllerBase createNewMultiblock();
-	
+
 	@Override
-	public IMultiblockPart[] getNeighboringParts() {
+	public org.rebel.machina.multiblock.helper.IMultiblockPart[] getNeighboringParts() {
 		CoordTriplet[] neighbors = new CoordTriplet[] {
 				new CoordTriplet(this.xCoord-1, this.yCoord, this.zCoord),
 				new CoordTriplet(this.xCoord, this.yCoord-1, this.zCoord),
@@ -306,7 +310,7 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 		};
 
 		TileEntity te;
-		List<IMultiblockPart> neighborParts = new ArrayList<IMultiblockPart>();
+		List<org.rebel.machina.multiblock.helper.IMultiblockPart> neighborParts = new ArrayList<org.rebel.machina.multiblock.helper.IMultiblockPart>();
 		IChunkProvider chunkProvider = worldObj.getChunkProvider();
 		for(CoordTriplet neighbor : neighbors) {
 			if(!chunkProvider.chunkExists(neighbor.getChunkX(), neighbor.getChunkZ())) {
@@ -314,12 +318,12 @@ public abstract class MultiblockTileEntityBase extends IMultiblockPart {
 				continue;
 			}
 
-			te = this.worldObj.getBlockTileEntity(neighbor.x, neighbor.y, neighbor.z);
-			if(te instanceof IMultiblockPart) {
-				neighborParts.add((IMultiblockPart)te);
+			te = this.worldObj.getTileEntity(neighbor.x, neighbor.y, neighbor.z);
+			if(te instanceof org.rebel.machina.multiblock.helper.IMultiblockPart) {
+				neighborParts.add((org.rebel.machina.multiblock.helper.IMultiblockPart)te);
 			}
 		}
-		IMultiblockPart[] tmp = new IMultiblockPart[neighborParts.size()];
+		org.rebel.machina.multiblock.helper.IMultiblockPart[] tmp = new IMultiblockPart[neighborParts.size()];
 		return neighborParts.toArray(tmp);
 	}
 	
