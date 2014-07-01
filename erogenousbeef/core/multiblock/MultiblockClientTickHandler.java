@@ -8,7 +8,7 @@ public class MultiblockClientTickHandler {
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            org.rebel.machina.multiblock.helper.MultiblockRegistry.tickStart(Minecraft.getMinecraft().theWorld);
+            MultiblockRegistry.tickStart(Minecraft.getMinecraft().theWorld);
         } else if (event.phase == TickEvent.Phase.END) {
             MultiblockRegistry.tickEnd(Minecraft.getMinecraft().theWorld);
         }
